@@ -1,6 +1,6 @@
 # RPG
 
-A small 3D game engine in C++20 and OpenGL, with an entity-component-system (ECS) architecture, physics and collision detection. The player is an animated carrot moving through a level with obstacles, stairs, doors and projectiles.
+A small 3D game engine in C++20 and OpenGL, with an entity-component-system (ECS) architecture, physics and collision detection. 
 
 ## Build
 
