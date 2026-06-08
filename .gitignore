@@ -42,3 +42,8 @@ Thumbs.db
 # Editor scratch
 *.swp
 *~
+
+# Project-specific: authoring sources / scratch (not needed at runtime)
+/blender/
+/blender_python/
+/notes/
