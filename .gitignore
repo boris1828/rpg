@@ -12,8 +12,9 @@ CMakeUserPresets.json
 !CMakeLists.txt
 
 # Compiled objects / libraries / executables
+# NOTE: do not ignore *.obj — the 3D models in assets/ are .obj files.
+# Compiler object files live under build/ which is already ignored.
 *.o
-*.obj
 *.a
 *.lib
 *.so
