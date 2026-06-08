@@ -1,0 +1,138 @@
+
+in the movable entities world interaction i want to dispatch the collision handling by the type of the entity:
+    - if it is dynamic (like it could be the player, an enemy or NPC) i only want to:
+      - check the collision with other dynamic entities to later handle and resolve the collision by separateìing the entities 
+        note: i want to handle collision just once per dynamic entities colliding couple;
+      - check collision with static object in movable world (like for example doors) to later handle and resolve the collision 
+        by separateing the dynamic entitiy 
+      - check overlapping with interactables objects to later handle interactions;
+    - if it is projectile:
+      - check collision with dynamic objects and handle projectile hitting a dynamic object;
+      - check collision with static object in movable world and handle the collision;
+
+
+
+enum class TriggerMode : uint8_t
+{
+    OnAreaFirstEnter, // First ever frame of overlap
+    OnAreaEnter,      // First frame of overlap, can be exited and re-entered
+    OnAreaExit,       // Frame overlap ceases
+    OnAreaStay,       // Every frame of overlap (Continuous)
+    OnAreaTick,       // Periodically while overlapping (Per-Entity Timer)
+    OnGlobalTick,     // Periodically while overlapping (Global timer)
+    OnClick,          // Clicked while hovered/pointed
+    OnHover           // While mouse is over (UI feedback)
+};
+
+
+OnAreaFirstEnter: keep a set of all entities that have overlapped
+  on reset              : do nothing
+  on overlap_collection : collection insert overlapping entity
+  on resolution         : apply interaction on new overlapping entities
+
+OnAreaEnter: keep a set of all entities that are overlapping and the frame before entities that were overlapping
+  on reset              : put last frame set in old set (old_set = new_set)
+  on overlap_collection : insert overlapping entity in new_set
+  on resolution         : apply interaction on entities in new_set - old_set
+
+OnAreaExit: keep a set of all entities that are overlapping and the frame before entities that were overlapping
+  on reset              : put last frame set in old set (old_set = new_set)
+  on overlap_collection : insert overlapping entity in new_set
+  on resolution         : apply interaction on entities in old_set - new_set
+
+OnAreaStay: keep a set of all entities that are overlapping
+  on reset              : clear set
+  on overlap_collection : insert overlapping entity in set
+  on resolution         : apply interaction on entities in set
+          
+
+how i want to do house/intern/castles etc...: 
+  first i dont want to reload a new area when someone enter a simple little house, the effect i want is that the roof disappear when you enter 
+  the house so you can see yourself inside (so having a bool visible flag somewhere), because the camera is fixed ubove the player slight at an angle
+  a house can have multiple floors, so if i enter the house all the above disappear, if i get up one floor the new floor i am in appear and so in
+  they must be defined with layers/areas, and when i enter an erea i trigger all the above one to disappear and all the other ine to appear, or something like that
+  do you like it? what are some problem i might not be thinking about? what are the data structure needed for this layout? i couldd use my inetractables system to 
+  trigger appereance and disappearance.
+
+enum class TriggerMode : uint8_t
+{
+    OnAreaFirstEnter, // First ever frame of overlap
+    OnAreaEnter,      // First frame of overlap, can be exited and re-entered
+    OnAreaExit,       // Frame overlap ceases
+    OnAreaStay,       // Every frame of overlap (Continuous)
+    // OnAreaTick,       // Periodically while overlapping (Per-Entity Timer)
+    OnGlobalTick,     // Periodically while overlapping (Global timer)
+    OnClick,          // Clicked while hovered/pointed
+    OnHover           // While mouse is over (UI feedback)
+};
+
+enum class InteractionType 
+{
+    Dialogue,
+    Loot,
+    StatusChange,
+    Door
+};
+
+struct InteractableInfo 
+{
+    TriggerMode     trigger_mode;
+    InteractionType interaction_type;
+
+    // Filters
+    bool only_player;
+    bool clickable;
+    bool affects_actor;
+
+    // State for ONLY_PLAYER
+    bool player_is_inside   = false;
+    bool player_was_inside  = false;
+    bool player_has_entered = false;
+
+    // State for anonymous interactables
+    uint32_t overlap_count          = 0;
+    uint32_t previous_overlap_count = 0;    
+
+    // UI State
+    bool hovered = false;
+
+    // TODO: runtime/static collision shape: maybe make a separate struct that has them both an rewrite logic on that (cleaner)
+    // BVH/Shape Data
+    CollisionShape rest_shape;
+    CollisionShape runtime_shape;
+    // Index aabb_tree_idx = nullAABBTreeIndex;
+
+    InteractableInfo() = default;
+
+    InteractableInfo(
+        TriggerMode     trigger_mode, 
+        InteractionType interaction_type, 
+        bool only_player,
+        bool clickable,
+        bool affects_actor,
+        CollisionShape rest_shape, 
+        CollisionShape runtime_shape) 
+    : 
+        trigger_mode(trigger_mode),
+        interaction_type(interaction_type),
+        only_player(only_player),
+        clickable(clickable),
+        affects_actor(affects_actor), 
+        rest_shape(rest_shape),
+        interaction_runtime_shape(runtime_shape)
+    {}
+
+    void reset() 
+    { 
+        player_has_entered = player_has_entered || player_is_inside;
+        player_was_inside  = player_is_inside;
+        player_is_inside   = false;
+        
+        previous_overlap_count = overlap_count;
+        overlap_count          = 0;
+        
+        hovered = false; 
+    }
+};
+
+i am interseted only in the player so these triggers should be only_player
